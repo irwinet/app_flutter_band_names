@@ -19,12 +19,32 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
 
   List<Band> bands = [
-    Band(id: '1', name: 'Metalica', votes: 5),
-    Band(id: '2', name: 'Queen', votes: 0),
-    Band(id: '3', name: 'Bon Jovi', votes: 1),
-    Band(id: '4', name: 'Morat', votes: 3),
-    Band(id: '5', name: 'Aitana', votes: 2),
+    // Band(id: '1', name: 'Metalica', votes: 5),
+    // Band(id: '2', name: 'Queen', votes: 0),
+    // Band(id: '3', name: 'Bon Jovi', votes: 1),
+    // Band(id: '4', name: 'Morat', votes: 3),
+    // Band(id: '5', name: 'Aitana', votes: 2),
   ];
+
+  @override
+  void initState() {
+    final socketService = Provider.of<SocketService>(context, listen: false);
+    socketService.socket.on('active-bands', (payload){
+      this.bands = (payload as List).map((band) => Band.fromMap(band)).toList();
+      setState(() {
+        
+      });
+    });
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    final socketService = Provider.of<SocketService>(context, listen: false);
+    socketService.socket.off('active-bands');
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
