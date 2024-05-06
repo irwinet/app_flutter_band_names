@@ -78,6 +78,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _bandTile(Band band) {
+
+    final socketService = Provider.of<SocketService>(context, listen: false);
+
     return Dismissible(
       key: Key(band.id),
       direction: DismissDirection.startToEnd,
@@ -85,6 +88,7 @@ class _HomePageState extends State<HomePage> {
         print('Direction: $direction');
         print('Id: ${band.id}');
         // TODO Call Api
+        socketService.socket.emit('delete-band', { 'id': band.id });
       },
       background: Container(
         padding: EdgeInsets.only(left: 8.0),
@@ -102,7 +106,8 @@ class _HomePageState extends State<HomePage> {
             title: Text(band.name),
             trailing: Text('${band.votes}', style: const TextStyle(fontSize: 20),),
             onTap: () {
-              print(band.name);
+              print(band.id);
+              socketService.socket.emit('vote-band', { 'id': band.id });
             },
           ),
     );
@@ -164,10 +169,12 @@ class _HomePageState extends State<HomePage> {
 
     if(name.length > 1){
       // TODO Add
-      this.bands.add(new Band(id: DateTime.now().toString(), name: name, votes: 0));
-      setState(() {
+      // this.bands.add(new Band(id: DateTime.now().toString(), name: name, votes: 0));
+      // setState(() {
         
-      });
+      // });
+      final socketService = Provider.of<SocketService>(context, listen: false);
+      socketService.socket.emit('add-band', { 'name' : name});
     }
     Navigator.pop(context);
   }
