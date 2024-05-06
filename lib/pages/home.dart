@@ -4,6 +4,7 @@ import 'package:app_flutter_band_names/models/band.dart';
 import 'package:app_flutter_band_names/services/socker_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pie_chart/pie_chart.dart';
 import 'package:provider/provider.dart';
 
 
@@ -29,14 +30,16 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     final socketService = Provider.of<SocketService>(context, listen: false);
-    socketService.socket.on('active-bands', (payload){
-      this.bands = (payload as List).map((band) => Band.fromMap(band)).toList();
-      setState(() {
-        
-      });
-    });
+    socketService.socket.on('active-bands', _handleActiveBands);
 
     super.initState();
+  }
+
+  _handleActiveBands(dynamic payload) {
+    bands = (payload as List).map((band) => Band.fromMap(band)).toList();
+    setState(() {
+      
+    });
   }
 
   @override
@@ -65,9 +68,17 @@ class _HomePageState extends State<HomePage> {
           )
         ],
       ),
-      body: ListView.builder(
-        itemCount: bands.length,
-        itemBuilder: (context, i) => _bandTile(bands[i]),        
+      body: Column(
+        children: [
+          _showGraph(),
+
+          Expanded(
+            child: ListView.builder(
+              itemCount: bands.length,
+              itemBuilder: (context, i) => _bandTile(bands[i]),        
+            ),
+          )
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         elevation: 1,
@@ -84,16 +95,11 @@ class _HomePageState extends State<HomePage> {
     return Dismissible(
       key: Key(band.id),
       direction: DismissDirection.startToEnd,
-      onDismissed: (direction) {
-        print('Direction: $direction');
-        print('Id: ${band.id}');
-        // TODO Call Api
-        socketService.socket.emit('delete-band', { 'id': band.id });
-      },
+      onDismissed: ( _ ) => socketService.socket.emit('delete-band', { 'id': band.id }),
       background: Container(
-        padding: EdgeInsets.only(left: 8.0),
+        padding: const EdgeInsets.only(left: 8.0),
         color: Colors.red,
-        child: Align(
+        child: const Align(
           alignment: Alignment.centerLeft,
           child: Text('Delete Band', style: TextStyle(color: Colors.white),)
         ),
@@ -105,10 +111,7 @@ class _HomePageState extends State<HomePage> {
             ),
             title: Text(band.name),
             trailing: Text('${band.votes}', style: const TextStyle(fontSize: 20),),
-            onTap: () {
-              print(band.id);
-              socketService.socket.emit('vote-band', { 'id': band.id });
-            },
+            onTap: () => socketService.socket.emit('vote-band', { 'id': band.id }),
           ),
     );
   }
@@ -119,8 +122,7 @@ class _HomePageState extends State<HomePage> {
     if(Platform.isAndroid) {
       return showDialog(
         context: context,
-        builder: (context) {
-          return AlertDialog(
+        builder: ( _ ) => AlertDialog(
             title: const Text('New band name:'),
             content: TextField(
               controller: textController,
@@ -133,15 +135,13 @@ class _HomePageState extends State<HomePage> {
                 onPressed: () => addBandToList(textController.text)
               )
             ],
-          );
-        }
+          )
       );
     }
 
     showCupertinoDialog(
       context: context, 
-      builder: (_) {
-        return CupertinoAlertDialog(
+      builder: (_) => CupertinoAlertDialog(
           title: const Text('New band name:'),
           content: CupertinoTextField(
             controller: textController,
@@ -158,14 +158,13 @@ class _HomePageState extends State<HomePage> {
               onPressed: () => Navigator.pop(context),
             )
           ],
-        );
-      },
+        )
     );
     
   }
 
   void addBandToList(String name) {
-    print(name);
+    // print(name);
 
     if(name.length > 1){
       // TODO Add
@@ -177,6 +176,55 @@ class _HomePageState extends State<HomePage> {
       socketService.socket.emit('add-band', { 'name' : name});
     }
     Navigator.pop(context);
+  }
+
+  Widget _showGraph(){
+    final Map<String, double> dataMap = {};
+    final List<Color> colorList = [
+      Colors.blueAccent,
+      Colors.pinkAccent,
+      Colors.yellowAccent,
+      Colors.greenAccent
+    ];
+
+    bands.forEach((band) {
+      dataMap[band.name] = band.votes.toDouble();
+    });
+
+    return Container(
+      padding: EdgeInsets.only(top: 10),
+      width: double.infinity,
+      height: 200,
+      child: PieChart(
+        dataMap: dataMap,
+        animationDuration: Duration(milliseconds: 800),
+        chartLegendSpacing: 32,
+        chartRadius: MediaQuery.of(context).size.width / 3.2,
+        colorList: colorList,
+        initialAngleInDegree: 0,
+        chartType: ChartType.ring,
+        ringStrokeWidth: 32,
+        // centerText: "BANDS",
+        legendOptions: LegendOptions(
+          showLegendsInRow: false,
+          legendPosition: LegendPosition.right,
+          showLegends: true,
+          legendShape: BoxShape.circle,
+          legendTextStyle: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        chartValuesOptions: ChartValuesOptions(
+          showChartValueBackground: true,
+          showChartValues: true,
+          showChartValuesInPercentage: false,
+          showChartValuesOutside: false,
+          decimalPlaces: 0,
+        ),
+        // gradientList: ---To add gradient colors---
+        // emptyColorGradient: ---Empty Color gradient---
+      )
+    );
   }
 
 }
