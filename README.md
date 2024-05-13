@@ -1,5 +1,7 @@
 # Introduction
 
+![Pila de Protocolos TCP/IP](assets/tcp-ip.png "Pila de Protocolos TCP/IP" )
+
 ![Pila de Protocolos TCP/IP](assets/WebSocket-Modelo-TCP.jpg "Pila de Protocolos TCP/IP")
 
 # Problem
